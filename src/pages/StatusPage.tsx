@@ -18,11 +18,15 @@ function StatusView({ jobId }: { jobId: string }) {
       {job?.status === "completed" && (
         <div className="card result">
           <h2>Analysis result</h2>
-          {/* TODO: replace with the real view once the AI team defines the result shape */}
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "16px" }}>
+            <Link className="btn-link" style={{ background: "var(--accent)", color: "#06210f", fontWeight: 700 }} to={`/results/${job.resultId ?? job.jobId}`}>
+              عرض نتائج تحليل المباراة (View Results)
+            </Link>
+            <Link className="btn-link" to="/">
+              Analyze another match
+            </Link>
+          </div>
           <pre>{JSON.stringify(job.result, null, 2)}</pre>
-          <Link className="btn-link" to="/">
-            Analyze another match
-          </Link>
         </div>
       )}
     </main>
