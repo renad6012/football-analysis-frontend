@@ -1,0 +1,70 @@
+import { useCallback, useEffect, useState } from "react";
+import { api } from "../../api";
+import { ApiError } from "../../api/errors";
+import type { AnalysisJob } from "../../types/api";
+import type { FlowError } from "../upload/useUploadFlow";
+
+const POLL_INTERVAL_MS = 2000;
+const MAX_CONSECUTIVE_FAILURES = 3;
+const RETRYABLE = ["network", "timeout", "server"];
+
+export function useJobStatus(jobId: string) {
+  const [job, setJob] = useState<AnalysisJob | null>(null);
+  const [error, setError] = useState<FlowError | null>(null);
+  const [reconnecting, setReconnecting] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let failures = 0;
+
+    const poll = async () => {
+      try {
+        const result = await api.getJobStatus(jobId);
+        if (cancelled) return;
+
+        failures = 0;
+        setReconnecting(false);
+        setJob(result);
+
+        
+        if (result.status === "queued" || result.status === "processing") {
+          timer = setTimeout(poll, POLL_INTERVAL_MS);
+        }
+      } catch (e) {
+        if (cancelled) return;
+
+        const err =
+          e instanceof ApiError
+            ? e
+            : new ApiError("unknown", "Something went wrong. Please try again.");
+        failures += 1;
+
+        // أخطاء مؤقتة: نحاول تاني بعد فترة أطول شوية
+        if (RETRYABLE.includes(err.code) && failures < MAX_CONSECUTIVE_FAILURES) {
+          setReconnecting(true);
+          timer = setTimeout(poll, POLL_INTERVAL_MS * 2);
+          return;
+        }
+
+        setReconnecting(false);
+        setError({ code: err.code, message: err.message });
+      }
+    };
+
+    void poll();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [jobId, attempt]);
+
+  const retry = useCallback(() => {
+    setError(null);
+    setAttempt((a) => a + 1);
+  }, []);
+
+  return { job, error, reconnecting, retry };
+}

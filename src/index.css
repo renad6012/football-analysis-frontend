@@ -1,0 +1,102 @@
+:root {
+  --bg: #0f1a14;
+  --card: #16241c;
+  --border: #2a3d31;
+  --text: #e8f1ec;
+  --muted: #94a89c;
+  --accent: #2ecc71;
+  --danger: #ff6b6b;
+  color-scheme: dark;
+  font-family: system-ui, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; background: var(--bg); color: var(--text); }
+
+.page { max-width: 640px; margin: 0 auto; padding: 32px 20px; }
+
+.page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 20px;
+}
+h1 { font-size: 1.6rem; margin: 0; }
+
+.badge {
+  background: #3d3410; color: #ffd866; border: 1px solid #7a6a1f;
+  padding: 4px 10px; border-radius: 999px; font-size: 0.8rem;
+}
+
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px;
+}
+
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+label { font-weight: 600; font-size: 0.9rem; }
+
+input {
+  background: var(--bg); color: var(--text); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 12px; font-size: 1rem;
+}
+input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.hint, .muted { color: var(--muted); font-size: 0.85rem; }
+.error { color: var(--danger); font-size: 0.85rem; }
+
+button {
+  background: var(--card); color: var(--text); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 16px; font-size: 1rem; cursor: pointer;
+}
+button.primary {
+  background: var(--accent); color: #06210f; border: none;
+  font-weight: 700; width: 100%;
+}
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.alert {
+  background: #2b1517; border: 1px solid #6b2b30; border-radius: 8px;
+  padding: 12px 16px; margin-bottom: 16px;
+}
+.steps {
+  display: flex; gap: 8px; list-style: none; padding: 0; margin: 0 0 16px;
+}
+.steps li {
+  flex: 1; text-align: center; font-size: 0.8rem; color: var(--muted);
+  padding-bottom: 6px; border-bottom: 2px solid var(--border);
+}
+.steps li.active { color: var(--accent); border-color: var(--accent); }
+.steps li.done { color: var(--text); border-color: var(--accent); }
+
+.progress-title { margin: 0 0 4px; font-weight: 600; }
+.progress-track {
+  height: 10px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 999px; overflow: hidden; margin: 14px 0 8px;
+}
+.progress-fill { height: 100%; background: var(--accent); transition: width 0.2s ease; }
+
+.actions { display: flex; gap: 8px; margin-top: 12px; }
+a { color: var(--accent); }
+.small { font-size: 0.75rem; }
+
+.reconnecting { color: #ffd866; font-size: 0.85rem; margin: 6px 0; }
+
+.progress-fill.indeterminate {
+  width: 35%;
+  animation: slide 1.2s ease-in-out infinite;
+}
+@keyframes slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+.btn-link {
+  display: inline-block; text-decoration: none; color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px;
+}
+.result { margin-top: 16px; }
+.result h2 { margin: 0 0 12px; font-size: 1.1rem; }
+.result pre {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px; overflow-x: auto; font-size: 0.85rem; margin: 0 0 16px;
+}

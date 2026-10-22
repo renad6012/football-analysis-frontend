@@ -1,0 +1,108 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { api } from "../../api";
+import { ApiError, type ApiErrorCode } from "../../api/errors";
+import { resolveContentType } from "./contentType";
+import type { MatchMetadata } from "../../types/api";
+
+export type UploadPhase =
+  | "idle"
+  | "preparing"
+  | "uploading"
+  | "confirming"
+  | "done"
+  | "error";
+
+export interface FlowError {
+  code: ApiErrorCode;
+  message: string;
+}
+
+export function useUploadFlow() {
+  const [phase, setPhase] = useState<UploadPhase>("idle");
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<FlowError | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [lastMetadata, setLastMetadata] = useState<MatchMetadata | null>(null);
+
+  const submission = useRef<{ metadata: MatchMetadata; file: File } | null>(null);
+  const uploadedId = useRef<string | null>(null); // set once the video is uploaded
+  const confirmed = useRef(false); // set once the backend confirmed the upload
+  const busy = useRef(false);
+
+  const run = useCallback(async () => {
+    const current = submission.current;
+    if (!current || busy.current) return;
+    busy.current = true;
+    setError(null);
+
+    try {
+      let uploadId = uploadedId.current;
+
+      if (!uploadId) {
+        setPhase("preparing");
+        setProgress(0);
+        const permission = await api.requestUploadPermission({
+          name: current.file.name,
+          type: resolveContentType(current.file),
+          size: current.file.size,
+        });
+
+        setPhase("uploading");
+        await api.uploadVideo(current.file, permission, setProgress);
+
+        uploadId = permission.uploadId;
+        uploadedId.current = uploadId;
+        setProgress(100);
+      }
+
+      setPhase("confirming");
+      if (!confirmed.current) {
+        await api.confirmUpload(uploadId);
+        confirmed.current = true;
+      }
+      const result = await api.createAnalysis(uploadId, current.metadata);
+
+      setJobId(result.jobId);
+      setPhase("done");
+    } catch (e) {
+      const err =
+        e instanceof ApiError
+          ? e
+          : new ApiError("unknown", "Something went wrong. Please try again.");
+      setError({ code: err.code, message: err.message });
+      setPhase("error");
+    } finally {
+      busy.current = false;
+    }
+  }, []);
+
+  const submit = useCallback(
+    (metadata: MatchMetadata, file: File) => {
+      submission.current = { metadata, file };
+      uploadedId.current = null;
+      confirmed.current = false;
+      setLastMetadata(metadata);
+      setJobId(null);
+      void run();
+    },
+    [run]
+  );
+
+  const reset = useCallback(() => {
+    submission.current = null;
+    uploadedId.current = null;
+    confirmed.current = false;
+    setPhase("idle");
+    setProgress(0);
+    setError(null);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== "preparing" && phase !== "uploading") return;
+    const handler = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [phase]);
+
+  return { phase, progress, error, jobId, lastMetadata, submit, retry: run, reset };
+}
