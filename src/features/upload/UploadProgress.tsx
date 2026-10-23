@@ -1,9 +1,12 @@
+import { formatBytes } from "./validateVideo";
 import type { FlowError, UploadPhase } from "./useUploadFlow";
 
 interface Props {
   phase: UploadPhase;
   progress: number;
   fileName: string;
+  fileSize: number;
+  stats: { speedBps: number; etaSeconds: number } | null;
   error: FlowError | null;
   onRetry: () => void;
   onBack: () => void;
@@ -22,10 +25,14 @@ const TITLES: Partial<Record<UploadPhase, string>> = {
   done: "Upload complete. Opening analysis…",
 };
 
+const formatEta = (s: number) => (s < 60 ? `${Math.round(s)} s` : `${Math.ceil(s / 60)} min`);
+
 export default function UploadProgress({
   phase,
   progress,
   fileName,
+  fileSize,
+  stats,
   error,
   onRetry,
   onBack,
@@ -72,6 +79,14 @@ export default function UploadProgress({
         <div className="progress-fill" style={{ width: `${progress}%` }} />
       </div>
       <p className="muted">{progress}%</p>
+
+      {phase === "uploading" && (
+        <p className="muted small">
+          {formatBytes((progress / 100) * fileSize)} of {formatBytes(fileSize)}
+          {stats &&
+            ` · ${formatBytes(stats.speedBps)}/s · about ${formatEta(stats.etaSeconds)} left`}
+        </p>
+      )}
     </div>
   );
 }

@@ -12,6 +12,7 @@ export default function SetupPage() {
   const { limits, loading, error: limitsError, retry: retryLimits } = useUploadLimits();
   const flow = useUploadFlow();
   const [fileName, setFileName] = useState("");
+  const [fileSize, setFileSize] = useState(0);
 
   useEffect(() => {
     if (flow.phase === "done" && flow.jobId) {
@@ -21,6 +22,7 @@ export default function SetupPage() {
 
   const handleSubmit = (metadata: MatchMetadata, file: File) => {
     setFileName(file.name);
+    setFileSize(file.size);
     flow.submit(metadata, file);
   };
 
@@ -55,6 +57,8 @@ export default function SetupPage() {
           phase={flow.phase}
           progress={flow.progress}
           fileName={fileName}
+          fileSize={fileSize}
+          stats={flow.stats}
           error={flow.error}
           onRetry={flow.retry}
           onBack={flow.reset}

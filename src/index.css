@@ -100,3 +100,62 @@ a { color: var(--accent); }
   background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
   padding: 12px; overflow-x: auto; font-size: 0.85rem; margin: 0 0 16px;
 }
+.page.wide { max-width: 960px; }
+.result .btn-link { margin-top: 16px; }
+
+.dashboard { display: flex; flex-direction: column; gap: 16px; }
+
+.stat-grid {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+.stat {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px; display: flex; flex-direction: column; gap: 4px;
+}
+.stat-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); overflow-wrap: anywhere; }
+.stat-label { color: var(--muted); font-size: 0.85rem; }
+
+.dash-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px;
+}
+.dash-card h3 { margin: 0 0 14px; font-size: 1rem; }
+.dash-card .dash-card { background: var(--bg); margin-top: 12px; }
+
+.bars { display: flex; flex-direction: column; gap: 8px; }
+.bar-row {
+  display: grid; align-items: center; gap: 10px; font-size: 0.9rem;
+  grid-template-columns: minmax(70px, 140px) 1fr 70px;
+}
+.bar-label { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track {
+  height: 12px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 999px; overflow: hidden;
+}
+.bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+.bar-value { text-align: end; font-variant-numeric: tabular-nums; }
+
+.line-chart { width: 100%; height: auto; color: var(--accent); }
+
+.table-wrap { overflow-x: auto; margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { text-align: start; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 600; }
+
+select {
+  background: var(--bg); color: var(--text); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 10px; margin-bottom: 12px;
+}
+details summary { cursor: pointer; margin-top: 12px; color: var(--muted); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 0; }
+.chips li {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 999px; padding: 4px 10px; font-size: 0.85rem;
+}
+
+.link-button {
+  background: none; border: none; color: var(--muted);
+  text-decoration: underline; align-self: flex-start; padding: 0;
+}

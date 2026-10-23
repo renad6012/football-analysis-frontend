@@ -25,7 +25,21 @@ export interface AnalysisJob {
   progress?: number;
   errorMessage?: string;
   resultId?: string;
-  result?: unknown; 
+  result?: unknown;
+   backendStatus?: string;
+}
+
+export interface PlayerHeatmapData {
+  team: number | string;
+  number: number | string;
+  heatmapUrl?: string;
+  intensity?: number;
+}
+
+export interface AnalysisPlanData {
+  headline?: string;
+  summary?: string;
+  tactics?: string[];
 }
 
 export interface FootballApi {
@@ -40,10 +54,17 @@ export interface FootballApi {
     permission: UploadPermission,
     onProgress: (percent: number) => void
   ): Promise<void>;
-    confirmUpload(uploadId: string): Promise<void>;
-    createAnalysis(
+  confirmUpload(uploadId: string): Promise<void>;
+  createAnalysis(
     uploadId: string,
     metadata: MatchMetadata
   ): Promise<{ jobId: string }>;
   getJobStatus(jobId: string): Promise<AnalysisJob>;
+  getPlayerHeatmap?(
+    analysisId: string,
+    team: number | string,
+    playerNumber: number | string
+  ): Promise<unknown>;
+  createAnalysisPlan?(analysisId: string): Promise<unknown>;
+  getAnalysisPlan?(analysisId: string): Promise<unknown>;
 }
