@@ -146,26 +146,7 @@ export const mockApi: FootballApi = {
       progress: 100,
       resultId: "mock-result-1",
       backendStatus: "COMPLETED",
-      result: {
-        data_source: "Mock sample",
-        match_duration_minutes: 90,
-        players_detected: 22,
-        possession_percent: { home: 58, away: 42 },
-        passes: { home: 412, away: 301 },
-        shots_on_target: { home: 6, away: 3 },
-        intensity_by_5_min: [
-          42, 55, 61, 58, 66, 70, 64, 59, 52,
-          48, 57, 63, 69, 72, 68, 61, 55, 50,
-        ],
-        player_stats: [
-          { player: "Player 7", distance_km: 10.4, top_speed_kmh: 31.2, sprints: 24 },
-          { player: "Player 10", distance_km: 9.8, top_speed_kmh: 29.5, sprints: 18 },
-          { player: "Player 4", distance_km: 11.2, top_speed_kmh: 28.9, sprints: 15 },
-          { player: "Player 9", distance_km: 8.7, top_speed_kmh: 32.4, sprints: 27 },
-          { player: "Player 6", distance_km: 10.9, top_speed_kmh: 27.8, sprints: 12 },
-          { player: "Player 11", distance_km: 9.3, top_speed_kmh: 30.1, sprints: 21 },
-        ],
-      },
+      result: EL_CLASICO_MODEL_OUTPUT,
     };
   },
 

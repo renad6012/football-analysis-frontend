@@ -29,28 +29,73 @@ interface Props {
 function parseBackendResult(job?: AnalysisJob | null): MatchAnalysisData {
   const raw = (job?.result && typeof job.result === "object"
     ? job.result
-    : EL_CLASICO_MODEL_OUTPUT) as Record<string, any>;
+    : EL_CLASICO_MODEL_OUTPUT) as Record<string, unknown>;
 
-  const homeTeamName =
-    (raw.homeTeam as string) || (raw.home_team as string) || EL_CLASICO_MODEL_OUTPUT.homeTeam;
-  const awayTeamName =
-    (raw.awayTeam as string) || (raw.away_team as string) || EL_CLASICO_MODEL_OUTPUT.awayTeam;
-  const scoreDisplay =
-    (raw.score as string) || (raw.scoreDisplay as string) || EL_CLASICO_MODEL_OUTPUT.score;
-  const title =
-    (raw.title as string) || EL_CLASICO_MODEL_OUTPUT.title;
+  const getText = (value: unknown, fallback: string): string => {
+    if (typeof value === "string" && value.length > 0) return value;
+    if (value && typeof value === "object" && "name" in value) {
+      const name = value.name;
+      if (typeof name === "string" && name.length > 0) return name;
+    }
+    return fallback;
+  };
+
+  const homeTeamName = getText(
+    raw.homeTeam ?? raw.home_team,
+    EL_CLASICO_MODEL_OUTPUT.homeTeam
+  );
+  const awayTeamName = getText(
+    raw.awayTeam ?? raw.away_team,
+    EL_CLASICO_MODEL_OUTPUT.awayTeam
+  );
+  const scoreDisplay = getText(
+    raw.score ?? raw.scoreDisplay,
+    EL_CLASICO_MODEL_OUTPUT.score
+  );
+  const title = getText(raw.title, EL_CLASICO_MODEL_OUTPUT.title);
 
   // إحصائيات المباراة المطابقة لنتائج الموديل (الاستحواذ، التمريرات، التسديدات)
-  let stats: MatchStatRow[] = EL_CLASICO_MODEL_OUTPUT.stats;
-  if (Array.isArray(raw.stats) && raw.stats.length > 0) {
-    stats = raw.stats as MatchStatRow[];
-  }
+  const stats: MatchStatRow[] = Array.isArray(raw.stats) && raw.stats.length > 0
+    ? raw.stats.flatMap((item): MatchStatRow[] => {
+        if (!item || typeof item !== "object") return [];
+        const row = item as Record<string, unknown>;
+        const label = typeof row.label === "string" ? row.label : "";
+        const homeValue = row.homeValue ?? row.home;
+        const awayValue = row.awayValue ?? row.away;
+        if (!label || (typeof homeValue !== "string" && typeof homeValue !== "number") ||
+            (typeof awayValue !== "string" && typeof awayValue !== "number")) return [];
+        return [{ label, homeValue, awayValue }];
+      })
+    : EL_CLASICO_MODEL_OUTPUT.stats.map((row) => ({
+        label: row.label,
+        homeValue: row.home,
+        awayValue: row.away,
+      }));
 
   // أحداث وأهداف المباراة الستة المطابقة للموديل
-  let events: MatchEvent[] = EL_CLASICO_MODEL_OUTPUT.events;
-  if (Array.isArray(raw.events) && raw.events.length > 0) {
-    events = raw.events as MatchEvent[];
-  }
+  const events: MatchEvent[] = Array.isArray(raw.events) && raw.events.length > 0
+    ? raw.events.flatMap((item, index): MatchEvent[] => {
+        if (!item || typeof item !== "object") return [];
+        const event = item as Record<string, unknown>;
+        const seconds = typeof event.seconds === "number" ? event.seconds : 0;
+        const minute = typeof event.minute === "number" ? event.minute : Math.floor(seconds / 60);
+        const id = typeof event.id === "string" ? event.id : `event-${index + 1}`;
+        const title = typeof event.title === "string" ? event.title : "Match event";
+        const time = typeof event.time === "string"
+          ? event.time
+          : `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+        const subtitle = typeof event.subtitle === "string"
+          ? event.subtitle
+          : typeof event.team === "string" ? event.team : `Minute ${minute}`;
+        return [{ id, time, seconds, title, subtitle }];
+      })
+    : EL_CLASICO_MODEL_OUTPUT.events.map((event) => ({
+        id: event.id,
+        time: `${String(event.minute).padStart(2, "0")}:00`,
+        seconds: event.seconds,
+        title: event.title,
+        subtitle: event.team,
+      }));
 
   const detailedStats = (raw.detailedStats || raw.detailed_stats) as
     | DetailedPlayerStats
@@ -79,7 +124,7 @@ function parseBackendResult(job?: AnalysisJob | null): MatchAnalysisData {
     eventsNotice: "تم استخراج التوقيتات والأحداث بدقة بواسطة موديل تحليل الفيديو الرياضي.",
     videoTitle: "فيديو المباراة ومراجعة الأحداث",
     videoSubtitle: "يمكن الانتقال إلى توقيت كل هدف أو حدث بالنقر عليه مباشرة.",
-    videoUrl: (raw.videoUrl as string) || null,
+    videoUrl: typeof raw.videoUrl === "string" ? raw.videoUrl : null,
     noVideoMessage: "انقر على أي حدث باليسار للمعاينة المباشرة للتوقيت",
     askTitle: "اسأل عن مجريات المباراة",
     askSubtitle: "تظهر الإجابات وتحليل الذكاء الاصطناعي للأهداف والخطط التكتيكية.",
@@ -112,7 +157,7 @@ export default function ResultsPage({ initialData }: Props) {
 
   return (
     <main className="results-page-container" dir="rtl">
-      {/* 1. رأس الصفحة */}
+      {/* رأس الصفحة */}
       <ResultsHeader
         category={data.category}
         title={data.title ?? "تحليل كلاسيكو 2017: ريال مدريد 2 - 3 برشلونة"}
@@ -130,7 +175,7 @@ export default function ResultsPage({ initialData }: Props) {
         </div>
       )}
 
-      {/* 2. بطاقة ملخص المباراة (ريال مدريد 2 - 3 برشلونة مع إحصائيات الاستحواذ والتمريرات والتسديدات) */}
+      {/* 2. بطاقة ملخص المباراة */}
       <MatchSummaryCard
         title="ملخص كلاسيكو 2017 (Match Summary)"
         homeTeam={data.homeTeam}
@@ -141,7 +186,7 @@ export default function ResultsPage({ initialData }: Props) {
         stats={data.stats}
       />
 
-      {/* 3. بطاقة الخطة التكتيكية وتتبع الـ 19 لاعباً والخرائط الحرارية (APIs الموديل) */}
+      {/* 3. بطاقة الخطة التكتيكية وتتبع اللاعبين */}
       <TacticalModelPlanCard
         analysisId={targetId || "clasico-2017"}
         rosterCount={19}
@@ -153,7 +198,7 @@ export default function ResultsPage({ initialData }: Props) {
         <DetailedStatsSection data={data.detailedStats} />
       ) : null}
 
-      {/* 5. شبكة فيديو المباراة وقائمة الأهداف والأحداث الستة بتوقيتاتها الحقيقية */}
+      {/* 5. شبكة فيديو المباراة وقائمة الأهداف والأحداث */}
       <div className="results-content-grid">
         <MatchVideoCard
           ref={videoRef}

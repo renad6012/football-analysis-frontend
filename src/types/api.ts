@@ -13,7 +13,7 @@ export interface UploadLimits {
 }
 
 export interface UploadPermission {
-  uploadId: string; // = videoId from the backend
+  uploadId: string;
   uploadUrl: string;
   method: "PUT";
   headers?: Record<string, string>;
@@ -26,20 +26,6 @@ export interface AnalysisJob {
   errorMessage?: string;
   resultId?: string;
   result?: unknown;
-   backendStatus?: string;
-}
-
-export interface PlayerHeatmapData {
-  team: number | string;
-  number: number | string;
-  heatmapUrl?: string;
-  intensity?: number;
-}
-
-export interface AnalysisPlanData {
-  headline?: string;
-  summary?: string;
-  tactics?: string[];
 }
 
 export interface FootballApi {

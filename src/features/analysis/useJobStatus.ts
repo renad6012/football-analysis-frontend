@@ -16,6 +16,13 @@ export function useJobStatus(jobId: string) {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    if (!jobId) {
+      setJob(null);
+      setError(null);
+      setReconnecting(false);
+      return;
+    }
+
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let failures = 0;
