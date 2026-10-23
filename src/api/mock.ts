@@ -1,41 +1,50 @@
 import { UPLOAD_LIMITS } from "../config/limits";
 import { ApiError } from "./errors";
+import { EL_CLASICO_MODEL_OUTPUT } from "./real";
 import type { FootballApi } from "../types/api";
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 interface MockJob {
   start: number;
   shouldFail: boolean;
-  pollFailuresLeft: number; 
+  pollFailuresLeft: number;
 }
+
 const jobs = new Map<string, MockJob>();
-
-
 const failedOnce = new Set<string>();
+
 function failOnce(key: string, error: ApiError) {
   if (failedOnce.has(key)) return;
+
   failedOnce.add(key);
   throw error;
 }
 
 export const mockApi: FootballApi = {
-    async getUploadLimits() {
+  async getUploadLimits() {
     await sleep(300);
     return UPLOAD_LIMITS;
   },
 
   async requestUploadPermission(file) {
     await sleep(400);
+
     if (file.name.includes("session")) {
-      throw new ApiError("unauthorized", "Your session has expired. Please sign in again.");
+      throw new ApiError(
+        "unauthorized",
+        "Your session has expired. Please sign in again."
+      );
     }
+
     if (file.name.includes("timeout")) {
       failOnce(
         `timeout:${file.name}`,
         new ApiError("timeout", "The request took too long. Please try again.")
       );
     }
+
     return {
       uploadId: `mock-${Date.now()}-${file.name}`,
       uploadUrl: "mock://upload",
@@ -44,31 +53,39 @@ export const mockApi: FootballApi = {
   },
 
   async uploadVideo(file, _permission, onProgress) {
-    for (let p = 0; p <= 100; p += 10) {
-      onProgress(p);
-      if (p === 50 && file.name.includes("upload-error")) {
+    for (let progress = 0; progress <= 100; progress += 10) {
+      onProgress(progress);
+
+      if (progress === 50 && file.name.includes("upload-error")) {
         failOnce(
           `upload:${file.name}`,
           new ApiError("upload", "Video upload failed. Please try again.")
         );
       }
+
       await sleep(250);
     }
   },
 
-    async confirmUpload(uploadId) {
+  async confirmUpload(uploadId) {
     await sleep(300);
+
     if (uploadId.includes("confirm-error")) {
       failOnce(
         `confirm:${uploadId}`,
-        new ApiError("server", "Something went wrong on our side. Please try again later.")
+        new ApiError(
+          "server",
+          "Something went wrong on our side. Please try again later."
+        )
       );
     }
   },
 
   async createAnalysis(uploadId) {
     await sleep(400);
+
     const jobId = `mock-job-${Date.now()}`;
+
     jobs.set(jobId, {
       start: Date.now(),
       shouldFail: uploadId.includes("fail"),
@@ -78,35 +95,106 @@ export const mockApi: FootballApi = {
           ? 2
           : 0,
     });
+
     return { jobId };
   },
 
   async getJobStatus(jobId) {
     await sleep(200);
+
     const job = jobs.get(jobId);
-    if (!job) throw new ApiError("not_found", "We couldn't find this analysis. It may have been removed.");
+
+    if (!job) {
+      return {
+        jobId,
+        status: "completed",
+        resultId: jobId,
+        result: EL_CLASICO_MODEL_OUTPUT,
+      };
+    }
 
     const elapsed = Date.now() - job.start;
 
     if (elapsed >= 4000 && job.pollFailuresLeft > 0) {
       job.pollFailuresLeft -= 1;
-      throw new ApiError("network", "Can't reach the server. Check your connection and try again.");
+      throw new ApiError(
+        "network",
+        "Can't reach the server. Check your connection and try again."
+      );
     }
 
-    if (elapsed < 3000) return { jobId, status: "queued" };
-    if (job.shouldFail && elapsed >= 6000) {
-      return { jobId, status: "failed", errorMessage: "Analysis failed (mock)." };
+    if (elapsed < 3000) {
+      return { jobId, status: "queued" };
     }
-    if (elapsed < 9000) {
-      const progress = Math.round(((elapsed - 3000) / 6000) * 100);
+
+    if (job.shouldFail && elapsed >= 6000) {
+      return {
+        jobId,
+        status: "failed",
+        errorMessage: "Analysis failed (mock).",
+      };
+    }
+
+    if (elapsed < 7000) {
+      const progress = Math.round(((elapsed - 3000) / 4000) * 100);
       return { jobId, status: "processing", progress };
     }
-        return {
+
+    return {
       jobId,
       status: "completed",
       progress: 100,
       resultId: "mock-result-1",
-      result: { source: "mock", message: "Sample analysis result (demo data)" },
+      backendStatus: "COMPLETED",
+      result: {
+        data_source: "Mock sample",
+        match_duration_minutes: 90,
+        players_detected: 22,
+        possession_percent: { home: 58, away: 42 },
+        passes: { home: 412, away: 301 },
+        shots_on_target: { home: 6, away: 3 },
+        intensity_by_5_min: [
+          42, 55, 61, 58, 66, 70, 64, 59, 52,
+          48, 57, 63, 69, 72, 68, 61, 55, 50,
+        ],
+        player_stats: [
+          { player: "Player 7", distance_km: 10.4, top_speed_kmh: 31.2, sprints: 24 },
+          { player: "Player 10", distance_km: 9.8, top_speed_kmh: 29.5, sprints: 18 },
+          { player: "Player 4", distance_km: 11.2, top_speed_kmh: 28.9, sprints: 15 },
+          { player: "Player 9", distance_km: 8.7, top_speed_kmh: 32.4, sprints: 27 },
+          { player: "Player 6", distance_km: 10.9, top_speed_kmh: 27.8, sprints: 12 },
+          { player: "Player 11", distance_km: 9.3, top_speed_kmh: 30.1, sprints: 21 },
+        ],
+      },
+    };
+  },
+
+  async getPlayerHeatmap(jobId, team, playerNumber) {
+    await sleep(200);
+
+    return {
+      analysisId: jobId,
+      team,
+      number: playerNumber,
+      heatmapUrl: "mock://heatmap",
+    };
+  },
+
+  async createAnalysisPlan(jobId) {
+    await sleep(300);
+
+    return {
+      analysisId: jobId,
+      headline: EL_CLASICO_MODEL_OUTPUT.tacticalPlanHeadline,
+    };
+  },
+
+  async getAnalysisPlan(jobId) {
+    await sleep(200);
+
+    return {
+      analysisId: jobId,
+      headline: EL_CLASICO_MODEL_OUTPUT.tacticalPlanHeadline,
     };
   },
 };

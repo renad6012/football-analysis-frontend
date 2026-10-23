@@ -17,9 +17,15 @@ export interface FlowError {
   message: string;
 }
 
+export interface UploadStats {
+  speedBps: number;
+  etaSeconds: number;
+}
+
 export function useUploadFlow() {
   const [phase, setPhase] = useState<UploadPhase>("idle");
   const [progress, setProgress] = useState(0);
+  const [stats, setStats] = useState<UploadStats | null>(null);
   const [error, setError] = useState<FlowError | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [lastMetadata, setLastMetadata] = useState<MatchMetadata | null>(null);
@@ -41,6 +47,7 @@ export function useUploadFlow() {
       if (!uploadId) {
         setPhase("preparing");
         setProgress(0);
+        setStats(null);
         const permission = await api.requestUploadPermission({
           name: current.file.name,
           type: resolveContentType(current.file),
@@ -48,7 +55,18 @@ export function useUploadFlow() {
         });
 
         setPhase("uploading");
-        await api.uploadVideo(current.file, permission, setProgress);
+        const startedAt = Date.now();
+        await api.uploadVideo(current.file, permission, (percent) => {
+          setProgress(percent);
+          const seconds = (Date.now() - startedAt) / 1000;
+          if (seconds > 1 && percent > 0) {
+            const sent = (percent / 100) * current.file.size;
+            setStats({
+              speedBps: sent / seconds,
+              etaSeconds: (seconds * (100 - percent)) / percent,
+            });
+          }
+        });
 
         uploadId = permission.uploadId;
         uploadedId.current = uploadId;
@@ -83,6 +101,7 @@ export function useUploadFlow() {
       confirmed.current = false;
       setLastMetadata(metadata);
       setJobId(null);
+      setStats(null);
       void run();
     },
     [run]
@@ -94,9 +113,11 @@ export function useUploadFlow() {
     confirmed.current = false;
     setPhase("idle");
     setProgress(0);
+    setStats(null);
     setError(null);
   }, []);
 
+  // Warn the user if they try to close the page during the upload
   useEffect(() => {
     if (phase !== "preparing" && phase !== "uploading") return;
     const handler = (e: BeforeUnloadEvent) => e.preventDefault();
@@ -104,5 +125,15 @@ export function useUploadFlow() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [phase]);
 
-  return { phase, progress, error, jobId, lastMetadata, submit, retry: run, reset };
+  return {
+    phase,
+    progress,
+    stats,
+    error,
+    jobId,
+    lastMetadata,
+    submit,
+    retry: run,
+    reset,
+  };
 }

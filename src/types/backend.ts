@@ -58,6 +58,23 @@ export interface AnalysisResponse { // HTTP 200
   updatedAt: string;      // ISO 8601
 }
 
+// ===== 5) GET /api/v1/analyses/:analysisId/player/:team/:number/heatmap =====
+export interface HeatmapResponse {
+  analysisId: string;
+  team: string | number;
+  number: string | number;
+  heatmapUrl?: string;
+  intensityMap?: number[][];
+}
+
+// ===== 6) POST & GET /api/v1/analyses/:analysisId/plan =====
+export interface TacticalPlanResponse {
+  analysisId: string;
+  headline: string;
+  recommendations?: string[];
+  zones?: string[];
+}
+
 // ===== Errors =====
 
 export interface ApiErrorBody {
