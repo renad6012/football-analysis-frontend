@@ -17,9 +17,6 @@ export function useJobStatus(jobId: string) {
 
   useEffect(() => {
     if (!jobId) {
-      setJob(null);
-      setError(null);
-      setReconnecting(false);
       return;
     }
 

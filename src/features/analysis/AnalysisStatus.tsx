@@ -49,15 +49,12 @@ export default function AnalysisStatus({
   const elapsedSeconds = useElapsedSeconds();
 
   if (error) {
-    const canRetry =
-      error.code !== "unauthorized" && error.code !== "not_found";
-
     return (
       <div className="card">
         <div className="alert" role="alert">
           <p>{error.message}</p>
           <div className="actions">
-            {canRetry && <button onClick={onRetry}>Try again</button>}
+            <button onClick={onRetry}>Try again</button>
             <Link className="btn-link" to="/">
               New analysis
             </Link>
@@ -81,6 +78,7 @@ export default function AnalysisStatus({
         <div className="alert" role="alert">
           <p>{job.errorMessage ?? "The analysis could not be completed."}</p>
           <div className="actions">
+            <button onClick={onRetry}>Check again</button>
             <Link className="btn-link" to="/">
               Start a new analysis
             </Link>

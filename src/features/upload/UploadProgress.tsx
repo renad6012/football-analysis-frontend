@@ -43,7 +43,7 @@ export default function UploadProgress({
         <div className="alert" role="alert">
           <p>{error.message}</p>
           <div className="actions">
-            {error.code !== "unauthorized" && <button onClick={onRetry}>Try again</button>}
+            <button onClick={onRetry}>Try again</button>
             <button onClick={onBack}>Back to form</button>
           </div>
         </div>

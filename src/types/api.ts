@@ -1,12 +1,5 @@
 export type JobStatus = "queued" | "processing" | "completed" | "failed";
 
-export interface MatchMetadata {
-  homeTeam: string;
-  awayTeam: string;
-  matchDate: string; // YYYY-MM-DD
-  competition?: string;
-}
-
 export interface UploadLimits {
   maxFileSizeBytes: number;
   allowedMimeTypes: string[];
@@ -41,16 +34,8 @@ export interface FootballApi {
     onProgress: (percent: number) => void
   ): Promise<void>;
   confirmUpload(uploadId: string): Promise<void>;
-  createAnalysis(
-    uploadId: string,
-    metadata: MatchMetadata
-  ): Promise<{ jobId: string }>;
+  createAnalysis(uploadId: string): Promise<{ jobId: string }>;
   getJobStatus(jobId: string): Promise<AnalysisJob>;
-  getPlayerHeatmap?(
-    analysisId: string,
-    team: number | string,
-    playerNumber: number | string
-  ): Promise<unknown>;
-  createAnalysisPlan?(analysisId: string): Promise<unknown>;
-  getAnalysisPlan?(analysisId: string): Promise<unknown>;
+  getPlayerHeatmapUrl(analysisId: string, team: number, playerNumber: number): string;
+  getPlayerReport(analysisId: string, team: number, playerNumber: number): Promise<unknown>;
 }

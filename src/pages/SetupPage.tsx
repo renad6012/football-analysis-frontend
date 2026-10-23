@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import MatchSetupForm from "../features/match-setup/MatchSetupForm";
+import VideoPicker from "../features/upload/VideoPicker";
 import UploadProgress from "../features/upload/UploadProgress";
 import { useUploadFlow } from "../features/upload/useUploadFlow";
 import { useUploadLimits } from "../features/upload/useUploadLimits";
 import { isMockMode } from "../api";
-import type { MatchMetadata } from "../types/api";
 
 export default function SetupPage() {
   const navigate = useNavigate();
@@ -20,10 +19,10 @@ export default function SetupPage() {
     }
   }, [flow.phase, flow.jobId, navigate]);
 
-  const handleSubmit = (metadata: MatchMetadata, file: File) => {
+  const handleSubmit = (file: File) => {
     setFileName(file.name);
     setFileSize(file.size);
-    flow.submit(metadata, file);
+    flow.submit(file);
   };
 
   const showForm = flow.phase === "idle";
@@ -45,11 +44,7 @@ export default function SetupPage() {
       )}
 
       {showForm && limits && (
-        <MatchSetupForm
-          limits={limits}
-          initialValues={flow.lastMetadata ?? undefined}
-          onSubmit={handleSubmit}
-        />
+        <VideoPicker limits={limits} onSubmit={handleSubmit} />
       )}
 
       {!showForm && (

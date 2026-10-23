@@ -1,4 +1,5 @@
 import { Navigate, useParams } from "react-router-dom";
+import ResultsPage from "./ResultsPage";
 import AnalysisStatus from "../features/analysis/AnalysisStatus";
 import { useJobStatus } from "../features/analysis/useJobStatus";
 import { isMockMode } from "../api";
@@ -6,9 +7,7 @@ import { isMockMode } from "../api";
 function StatusView({ jobId }: { jobId: string }) {
   const { job, error, reconnecting, retry } = useJobStatus(jobId);
 
-  if (job?.status === "completed") {
-    return <Navigate to={`/analysis/${jobId}/results`} replace />;
-  }
+  if (job?.status === "completed") return <ResultsPage analysisId={jobId} />;
 
   return (
     <main className="page wide">

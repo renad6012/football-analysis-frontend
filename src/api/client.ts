@@ -4,7 +4,7 @@ import { ApiError } from "./errors";
 import type { ApiErrorBody } from "../types/backend";
 
 export const http = axios.create({
-  baseURL: env.apiBaseUrl,
+  baseURL: env.apiBaseUrl.replace(/\/+$/, ""),
   timeout: 15000,
 });
 

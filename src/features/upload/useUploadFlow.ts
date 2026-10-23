@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../api";
 import { ApiError, type ApiErrorCode } from "../../api/errors";
 import { resolveContentType } from "./contentType";
-import type { MatchMetadata } from "../../types/api";
 
 export type UploadPhase =
   | "idle"
@@ -28,9 +27,7 @@ export function useUploadFlow() {
   const [stats, setStats] = useState<UploadStats | null>(null);
   const [error, setError] = useState<FlowError | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
-  const [lastMetadata, setLastMetadata] = useState<MatchMetadata | null>(null);
-
-  const submission = useRef<{ metadata: MatchMetadata; file: File } | null>(null);
+  const submission = useRef<{ file: File } | null>(null);
   const uploadedId = useRef<string | null>(null); // set once the video is uploaded
   const confirmed = useRef(false); // set once the backend confirmed the upload
   const busy = useRef(false);
@@ -78,7 +75,7 @@ export function useUploadFlow() {
         await api.confirmUpload(uploadId);
         confirmed.current = true;
       }
-      const result = await api.createAnalysis(uploadId, current.metadata);
+      const result = await api.createAnalysis(uploadId);
 
       setJobId(result.jobId);
       setPhase("done");
@@ -95,11 +92,10 @@ export function useUploadFlow() {
   }, []);
 
   const submit = useCallback(
-    (metadata: MatchMetadata, file: File) => {
-      submission.current = { metadata, file };
+    (file: File) => {
+      submission.current = { file };
       uploadedId.current = null;
       confirmed.current = false;
-      setLastMetadata(metadata);
       setJobId(null);
       setStats(null);
       void run();
@@ -131,7 +127,6 @@ export function useUploadFlow() {
     stats,
     error,
     jobId,
-    lastMetadata,
     submit,
     retry: run,
     reset,

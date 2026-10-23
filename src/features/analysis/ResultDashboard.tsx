@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from "react";
 
 const MAX_BARS = 20;
-const MAX_ROWS = 50;
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
@@ -142,7 +141,7 @@ function ArrayBlock({ items }: { items: unknown[] }) {
   const rows = items.filter(isObject);
   if (rows.length === items.length) {
     const first = rows[0];
-    const keys = Object.keys(first);
+    const keys = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
     const labelKey = keys.find((k) => typeof first[k] === "string");
     const numericKeys = keys.filter((k) => isNumber(first[k]));
     const activeMetric = metric && numericKeys.includes(metric) ? metric : numericKeys[0];
@@ -179,10 +178,10 @@ function ArrayBlock({ items }: { items: unknown[] }) {
                 </tr>
               </thead>
               <tbody>
-                {rows.slice(0, MAX_ROWS).map((row, i) => (
+                {rows.map((row, i) => (
                   <tr key={i}>
                     {keys.map((k) => (
-                      <td key={k}>{cellText(row[k])}</td>
+                      <td key={k}>{typeof row[k] === "string" && row[k].length > 140 ? <p className="result-paragraph" dir="auto">{row[k]}</p> : cellText(row[k])}</td>
                     ))}
                   </tr>
                 ))}
@@ -194,11 +193,17 @@ function ArrayBlock({ items }: { items: unknown[] }) {
     );
   }
 
+  if (rows.length > 0) {
+    return <div className="dashboard array-items">{items.map((item, index) => isObject(item)
+      ? <Card key={index} title={`Item ${index + 1}`}><ObjectBlock data={item} /></Card>
+      : <p key={index} dir="auto" className={typeof item === "string" && item.length > 140 ? "result-paragraph" : undefined}>{cellText(item)}</p>)}</div>;
+  }
+
   // anything else
   return (
     <ul className="chips">
-      {items.slice(0, MAX_ROWS).map((v, i) => (
-        <li key={i}>{cellText(v)}</li>
+      {items.map((v, i) => (
+        <li key={i}>{typeof v === "string" && v.length > 140 ? <p className="result-paragraph" dir="auto">{v}</p> : cellText(v)}</li>
       ))}
     </ul>
   );
@@ -223,17 +228,19 @@ function ValueBlock({ value }: { value: unknown }) {
     return <ObjectBlock data={value} />;
   }
 
-  return <p>{formatValue(value)}</p>;
+  return <p dir="auto" className={typeof value === "string" && value.length > 140 ? "result-paragraph" : undefined}>{formatValue(value)}</p>;
 }
 
 function ObjectBlock({ data }: { data: Record<string, unknown> }) {
   const entries = Object.entries(data);
-  const primitives = entries.filter(([, v]) => isPrimitive(v));
-  const nested = entries.filter(([, v]) => !isPrimitive(v));
+  const longText = entries.filter(([, value]) => typeof value === "string" && value.length > 140);
+  const primitives = entries.filter(([, value]) => isPrimitive(value) && !(typeof value === "string" && value.length > 140));
+  const nested = entries.filter(([, value]) => !isPrimitive(value));
 
   return (
     <>
       {primitives.length > 0 && <StatGrid entries={primitives} />}
+      {longText.map(([key, value]) => <section className="long-text-block" key={key}><h4>{humanize(key)}</h4><p dir="auto">{String(value)}</p></section>)}
       {nested.map(([key, value]) => (
         <Card key={key} title={humanize(key)}>
           <ValueBlock value={value} />
